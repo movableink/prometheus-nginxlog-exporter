@@ -168,6 +168,7 @@ func main() {
 	flag.StringVar(&opts.Namespace, "namespace", "nginx", "namespace to use for metric names")
 	flag.StringVar(&opts.ConfigFile, "config-file", "", "Configuration file to read from")
 	flag.BoolVar(&opts.EnableExperimentalFeatures, "enable-experimental", false, "Set this flag to enable experimental features")
+	flag.BoolVar(&opts.DisableParseErrorLogging, "disable-parse-error-logging", false, "Set this flag to disable log event parse error logging")
 	flag.StringVar(&opts.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
 	flag.StringVar(&opts.MemProfile, "memprofile", "", "write memory profile to `file`")
 	flag.StringVar(&opts.MetricsEndpoint, "metrics-endpoint", cfg.Listen.MetricsEndpoint, "URL path at which to serve metrics")
@@ -221,7 +222,7 @@ func main() {
 		nsGatherers = append(nsGatherers, nsMetrics.registry)
 
 		fmt.Printf("starting listener for namespace %s\n", ns.Name)
-		go processNamespace(ns, &(nsMetrics.Metrics))
+		go processNamespace(ns, &(nsMetrics.Metrics), cfg.DisableParseErrorLogging)
 	}
 
 	listenAddr := fmt.Sprintf("%s:%d", cfg.Listen.Address, cfg.Listen.Port)
@@ -276,7 +277,7 @@ func setupConsul(cfg *config.Config, stopChan <-chan bool, stopHandlers *sync.Wa
 	stopHandlers.Add(1)
 }
 
-func processNamespace(nsCfg config.NamespaceConfig, metrics *Metrics) {
+func processNamespace(nsCfg config.NamespaceConfig, metrics *Metrics, disableParseErrorLogging bool) {
 	var followers []tail.Follower
 
 	parser := gonx.NewParser(nsCfg.Format)
@@ -318,12 +319,12 @@ func processNamespace(nsCfg config.NamespaceConfig, metrics *Metrics) {
 	}
 
 	for _, f := range followers {
-		go processSource(nsCfg, f, parser, metrics)
+		go processSource(nsCfg, f, parser, metrics, disableParseErrorLogging)
 	}
 
 }
 
-func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser *gonx.Parser, metrics *Metrics) {
+func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser *gonx.Parser, metrics *Metrics, disableParseErrorLogging bool) {
 	relabelings := relabeling.NewRelabelings(nsCfg.RelabelConfigs)
 	relabelings = append(relabelings, relabeling.DefaultRelabelings...)
 	relabelings = relabeling.UniqueRelabelings(relabelings)
@@ -345,7 +346,9 @@ func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser *gonx.P
 
 		entry, err := parser.ParseString(line)
 		if err != nil {
-			fmt.Printf("error while parsing line '%s': %s\n", line, err)
+			if !disableParseErrorLogging {
+				fmt.Printf("error while parsing line '%s': %s\n", line, err)
+			}
 			metrics.parseErrorsTotal.Inc()
 			continue
 		}
