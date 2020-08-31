@@ -104,6 +104,7 @@ namespaces:
 func assertConfigContents(t *testing.T, cfg Config) {
 	assert.Equal(t, "10.0.0.1", cfg.Listen.Address)
 	assert.Equal(t, 4040, cfg.Listen.Port)
+	assert.Equal(t, false, cfg.DisableParseErrorLogging)
 
 	assert.True(t, cfg.Consul.Enable)
 	assert.Equal(t, "localhost:8500", cfg.Consul.Address)
@@ -162,6 +163,8 @@ listen {
 }
 enable_experimental = true
 
+disable_parse_error_logging = true
+
 namespace "default" {
   source_files = [
     "access.log"
@@ -197,6 +200,7 @@ listen:
   address: "10.0.0.1"
   port: 4040
 enable_experimental: true
+disable_parse_error_logging: true
 
 namespaces:
   - name: default
@@ -226,6 +230,7 @@ namespaces:
 func assertLabeledConfigContents(t *testing.T, cfg Config) {
 	assert.Equal(t, "10.0.0.1", cfg.Listen.Address)
 	assert.Equal(t, 4040, cfg.Listen.Port)
+	assert.Equal(t, true, cfg.DisableParseErrorLogging)
 
 	require.Len(t, cfg.Namespaces, 3)
 

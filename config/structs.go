@@ -10,6 +10,7 @@ type StartupFlags struct {
 	ListenPort                 int
 	EnableExperimentalFeatures bool
 	MetricsEndpoint            string
+	DisableParseErrorLogging   bool
 
 	CPUProfile string
 	MemProfile string
@@ -21,6 +22,7 @@ type Config struct {
 	Consul                     ConsulConfig
 	Namespaces                 []NamespaceConfig `hcl:"namespace"`
 	EnableExperimentalFeatures bool              `hcl:"enable_experimental" yaml:"enable_experimental"`
+	DisableParseErrorLogging   bool              `hcl:"disable_parse_error_logging" yaml:"disable_parse_error_logging"`
 
 	// In YAML, the EnableExperimentalFeatures property was originally set by the
 	// "enableexperimentalfeatures" property (although documented as "enable_experimental").

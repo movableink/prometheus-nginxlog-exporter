@@ -17,6 +17,7 @@ func LoadConfigFromFlags(config *Config, flags *StartupFlags) error {
 			},
 		},
 	}
+	config.DisableParseErrorLogging = flags.DisableParseErrorLogging
 
 	return nil
 }
